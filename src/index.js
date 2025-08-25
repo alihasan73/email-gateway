@@ -4,7 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 // const v1Route = require("./routes/v1");
 const router = require("./routes/v1");
-const {userModel, tokenModel} = require("./models");
+const {init} = require("./models");
 const config = require('./config/config');
 
 
@@ -17,7 +17,6 @@ app.use("/api/v1", router);
 
 
 app.get("/", (req, res) => {
-  tokenModel.tokenModel();
   res.send("Hello World");
 })
 
@@ -33,6 +32,20 @@ const smtp_config = require("./config/smtp_config");
 // })
 
 
-app.listen(config.port, () => {
-  console.log(`Server Email Node Js app listening at http://localhost:${config.port}`);
-})
+
+
+async function start() {
+  try {
+    const ok = await init();
+    if (ok) console.log('Database init completed');
+    else console.log('Database init finished with errors (see logs)');
+  } catch (err) {
+    console.error('Unexpected error during init:', err && err.message ? err.message : err);
+  }
+
+  app.listen(config.port, () => {
+    console.log(`Server Email Node Js app listening at http://localhost:${config.port}`);
+  });
+}
+
+start();

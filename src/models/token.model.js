@@ -48,8 +48,6 @@ async function tokenModel() {
     }
 }
 
-
-
 async function getProcess(query,  value){
   let conn;
   try {
@@ -72,5 +70,38 @@ async function getProcess(query,  value){
   }
 }
 
+async function findOne(token, type, blacklisted) {
+  const query = 'SELECT * FROM tokens WHERE token = ? AND type = ? AND blacklisted = ?';
+  const value = [token, type, blacklisted];
+  const conn = await db.getConnection();
+  try {
+    const [rows] = await conn.query(query, value);
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error('Error finding token:', error);
+    throw error;
+  } finally {
+    if (conn) {
+      try { conn.release(); } catch (e) { /* ignore release errors */ }
+    }
+  }
+}
 
-module.exports = {tokenModel, getProcess};
+async function deleteOne(id,token,type, blacklisted){
+  const query = 'DELETE FROM tokens WHERE token = ? AND type = ? AND blacklisted = ? AND id = ?';
+  const value = [token, type, blacklisted, id];
+  const conn = await db.getConnection();
+  try {
+    const [result] = await conn.query(query, value);
+    return result.affectedRows > 0;
+  } catch (error) {
+    console.error('Error deleting token:', error);
+    throw error;
+  } finally {
+    if (conn) {
+      try { conn.release(); } catch (e) { /* ignore release errors */ }
+    }
+  }
+}
+
+module.exports = {tokenModel, getProcess, findOne,deleteOne};

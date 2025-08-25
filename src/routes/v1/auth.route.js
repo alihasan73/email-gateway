@@ -8,6 +8,8 @@ const { validate } = require('../../middlewares');
 
 router.get('/test', authController.test);
 router.post("/register", validate(authValidation.register), authController.register);
+router.post("/login", validate(authValidation.login), authController.login);
+router.post("/refresh-token", validate(authValidation.refreshToken), authController.refreshToken);  
 // router.post("/email", )
 
 module.exports = router;

@@ -40,5 +40,13 @@ const generateAuthTokens = async (user) => {
     };
     
 };
+const verifyToken = async (token, type) => {
+    const payload = jwt.verify(token, config.jwt.secret);
+    const tokenDoc = await tokenModel.findOne(token, type, false);
+    if (!tokenDoc) {
+        throw new ApiError(status.UNAUTHORIZED, 'Invalid token');
+    }
+    return payload;
+};
 
-module.exports = { generateToken, saveToken, generateAuthTokens };
+module.exports = { generateToken, saveToken, generateAuthTokens, verifyToken };

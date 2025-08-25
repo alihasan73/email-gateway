@@ -1,6 +1,7 @@
 
 const db = require('../config/connect-promise');
 const table = require('./table');
+const bcrypt = require('bcrypt');
 
 async function userModel() {
   const sql = `CREATE TABLE users (
@@ -21,7 +22,7 @@ async function userModel() {
       const result = await table.getTableName('users');
       if (!result) {
         const [rows] = await pool.query(sql);
-        console.log('Tabel berhasil dibuat:', rows);
+        // console.log('Tabel berhasil dibuat:', rows);
       } else {
         console.log('Tabel sudah ada');
       }
@@ -55,12 +56,12 @@ async function isEmailTaken(email) {
         let sql = "SELECT * FROM users WHERE email = ?";
         if (pool) {
             const [rows] = await pool.query(sql, [email]);
-            return rows.length > 0;
+            return rows[0];
         }
 
         conn = await db.getConnection();
         const [rows] = await conn.query(sql, [email]);
-        if (rows.length > 0) {
+        if (rows) {
             return true;
         } else {
             return false;
@@ -97,7 +98,31 @@ async function getProcess(query, data){
    }
 }
 
+async function comparePassword(plainPassword, hashedPassword) {
+  return await bcrypt.compare(plainPassword, hashedPassword);
+}
 
+async function getUserId(id){
+    let conn;
+    try {
+         const pool = db._getPool();
+         let sql = "SELECT * FROM users WHERE id = ?";
+         if (pool) {
+         const [rows] = await pool.query(sql, [id]);
+         return  rows[0];
+         }
 
+        conn = await db.getConnection();
+        const [rows] = await conn.query(sql, [id]);
+        return rows[0];
 
-module.exports = { userModel, isEmailTaken, getProcess };
+    } catch (error) {
+         console.error('Error processing data :', error);
+    } finally {
+        if (conn) {
+        try { conn.release(); } catch (e) { /* ignore release errors */ }
+        }
+   }
+}
+
+module.exports = { userModel, isEmailTaken, getProcess, comparePassword, getUserId };
