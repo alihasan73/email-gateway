@@ -30,7 +30,15 @@ const refreshAuth = async (refreshToken) => {
     }
 }
 
+const logout = async (refreshToken) => {
+        const user = await tokenModel.findOne(refreshToken, tokenTypes.REFRESH, false);
+        if (!user) throw new Error('User not found');
+        
+        await tokenModel.deleteOne(user.user_id, refreshToken, tokenTypes.REFRESH, false);
+};
+
 module.exports = {
     loginUserWithEmailAndPassword,
-    refreshAuth
+    refreshAuth,
+    logout
 };

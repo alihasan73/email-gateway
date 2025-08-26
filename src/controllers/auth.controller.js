@@ -28,4 +28,11 @@ const refreshToken = catchAsync(async (req, res) => {
     const token = await authService.refreshAuth(refreshToken);
     res.status(status.OK).json({ token });
 })
-module.exports = { test, register, verifyEmail, login, refreshToken };
+
+const logout = catchAsync(async (req, res) => {
+    const { refreshToken } = req.body;
+    await authService.logout(refreshToken);
+    res.status(status.NO_CONTENT).send();
+})
+
+module.exports = { test, register, verifyEmail, login, refreshToken, logout };

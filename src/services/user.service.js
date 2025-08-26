@@ -2,6 +2,7 @@ const {status} = require('http-status');
 const {userModel} = require('../models');
 const ApiError = require('../utils/apiError.util');
 const bcrypt = require('bcrypt');
+// const {mailService} = require('../services');
 
 const createUser = async (userData) => {
     if(await userModel.isEmailTaken(userData.email)) {
@@ -14,9 +15,9 @@ const createUser = async (userData) => {
     }
 
     let hashedPassword = await hashPassword(userData.password);
-    // console.log(result);
     return userModel.getProcess('INSERT INTO users (name, email, password, role, isEmailVerified) VALUES (?, ?, ?, ?, ?)', [userData.name, userData.email, hashedPassword, userData.role, userData.isEmailVerified]);
 };
+
 
 
 module.exports = { createUser };
