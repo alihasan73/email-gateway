@@ -8,6 +8,10 @@ const sendEmail = catchAsync(async (req, res) => {
     await emailService.sendEmail(name, to, subject, text);
     res.status(status.OK).json({ message: 'Email sent successfully' });
 });
+const checkStatus = catchAsync(async (req, res) => {
+    const { mailid } = req.body;
+    const respon = await emailService.checkEmailStatus(mailid);
+    res.status(status.OK).json({ respon });
+});
 
-
-module.exports = {sendEmail}
+module.exports = {sendEmail, checkStatus}

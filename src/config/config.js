@@ -26,6 +26,10 @@ const envVarsSchema = Joi.object()
     EMAIL_FROM: Joi.string().description('the from field in the emails sent by the app'),
     SMTP_SERVICE: Joi.string().description('the email service to use'),
     FROM_SERVICE: Joi.string().description('the from service to use'),
+    SMTP_HOST_5: Joi.string().description('SMTP host for the 5th email server'),
+    SMTP_PORT_5: Joi.number().description('SMTP port for the 5th email server'),
+    SMTP_USERNAME_5: Joi.string().description('SMTP username for the 5th email server'),
+    SMTP_PASSWORD_5: Joi.string().description('SMTP password for the 5th email server'),
   })
   .unknown();
 
@@ -57,5 +61,11 @@ module.exports = {
     },
     from: envVars.EMAIL_FROM,
     fromService: envVars.FROM_SERVICE,
+    smtp_5: {
+      host: envVars.SMTP_HOST_5,
+      port: envVars.SMTP_PORT_5,
+      username : envVars.SMTP_USERNAME_5,
+      password : envVars.SMTP_PASSWORD_5,
+    },
   },
 };

@@ -42,12 +42,20 @@
 # }
 
 
-POST http://localhost:3000/api/v1/email/
+# POST http://localhost:3000/api/v1/email/
+# Content-Type: application/json
+
+# {
+#   "name" : "Hasan Ali",
+#   "to": "hasansanad73@gmail.com",
+#   "subject": "Test Email",
+#   "text": "This is a test email."
+# }
+
+
+POST http://localhost:3000/api/v1/email/status-single
 Content-Type: application/json
 
 {
-  "name" : "Hasan Ali",
-  "to": "hasansanad73@gmail.com",
-  "subject": "Test Email",
-  "text": "This is a test email."
+  "mailid": "9424B7A0333"
 }

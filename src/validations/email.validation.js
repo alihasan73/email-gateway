@@ -9,5 +9,10 @@ const email = {
         text: Joi.string().required(),
     })
 }
+const status = {
+    body: Joi.object().keys({
+        mailid: Joi.string().required(),
+    })
+}
 
-module.exports = { email };
+module.exports = { email, status };

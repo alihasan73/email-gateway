@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const config = require('../config/config')
+const {runCommandAndProcessLogs} = require('../utils/connServer.util');
 
 const transporter = nodemailer.createTransport(config.email.smtp);
 
@@ -15,7 +16,13 @@ const sendEmail = async (nameUser, addressUser, subject, text) => {
     await transporter.sendMail(mailOptions); 
 }
 
+const checkEmailStatus = async (mailid) => {
+    const command = `grep ${mailid} /home/ptkei/log/08-07-2025_FROM_SMTP5.txt`;
+    const result = await runCommandAndProcessLogs({ command });
+    return result;
+}
 
 module.exports = {
-    sendEmail
+    sendEmail,
+    checkEmailStatus
 }
