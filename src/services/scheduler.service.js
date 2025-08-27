@@ -25,13 +25,13 @@ function uuidv4() {
 }
 
 
-function scheduleEmail({ name, address, subject, text, sendAt }) {
+function scheduleEmail({ name, to, subject, text, sendAt }) {
   const arr = sendAt.split(',').map(Number);
   const jobs = loadJobs();
   const job = {
     id: uuidv4(),
     name: name || null,
-    address,
+    to,
     subject: subject || '(no subject)',
     text: text || '',
     sendAt: toISOStringFromComponents(...arr),
@@ -46,9 +46,11 @@ function scheduleEmail({ name, address, subject, text, sendAt }) {
 
 async function trySend(job) {
   try {
-    await emailService.sendEmail(job.name || '', job.address, job.subject, job.text);
+    await emailService.sendEmail(job.name || '', job.to, job.subject, job.text);
+    console.log('Email sent to', job.to);
     return { success: true };
   } catch (err) {
+    console.log("Gagal kirim")
     return { success: false, error: String(err) };
   }
 }
@@ -66,6 +68,7 @@ function start(options = {}) {
       if ((job.status === 'scheduled' || job.status === 'failed') && job.attempts < maxAttempts) {
         const ts = Date.parse(job.sendAt);
         if (!Number.isNaN(ts) && ts <= now) {
+          console.log(ts);
           job.status = 'sending';
           saveJobs(jobs);
           const res = await trySend(job);
