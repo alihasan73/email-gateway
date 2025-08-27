@@ -1,5 +1,3 @@
-const connect = require('../config/connect');
-// const {pool} = require('../config/connect-promise');
 const db = require('../config/connect-promise');
 
 function createPatternYearMonth(){

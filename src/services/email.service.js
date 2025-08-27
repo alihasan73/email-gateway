@@ -17,7 +17,7 @@ const sendEmail = async (nameUser, addressUser, subject, text) => {
 }
 
 const checkEmailStatus = async (mailid) => {
-    const command = `grep ${mailid} /home/ptkei/log/08-07-2025_FROM_SMTP5.txt`;
+    const command = `grep ${mailid} /home/sample/log/08-07-2025_FROM_SMTP5.txt`;
     const result = await runCommandAndProcessLogs({ command });
     return result;
 }

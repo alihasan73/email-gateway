@@ -9,6 +9,10 @@ const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
     PORT: Joi.number().default(3000),
+    HOST_DB: Joi.string().default('localhost'),
+    USER_DB: Joi.string().default('root'),
+    PASSWORD_DB: Joi.string().allow('').default(''),
+    DATABASE_DB: Joi.string(),
     MONGODB_URL: Joi.string().required().description('Mongo DB url'),
     JWT_SECRET: Joi.string().required().description('JWT secret key'),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(30).description('minutes after which access tokens expire'),
@@ -30,6 +34,7 @@ const envVarsSchema = Joi.object()
     SMTP_PORT_5: Joi.number().description('SMTP port for the 5th email server'),
     SMTP_USERNAME_5: Joi.string().description('SMTP username for the 5th email server'),
     SMTP_PASSWORD_5: Joi.string().description('SMTP password for the 5th email server'),
+    SMTP_COMMAND_5: Joi.string().allow('').description('SMTP command for the 5th email server'),
   })
   .unknown();
 
@@ -42,6 +47,12 @@ if (error) {
 module.exports = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
+  db : {
+    host: envVars.HOST_DB,
+    user: envVars.USER_DB,
+    password: envVars.PASSWORD_DB,
+    database: envVars.DATABASE_DB
+  },
   jwt: {
     secret: envVars.JWT_SECRET,
     accessExpirationMinutes: envVars.JWT_ACCESS_EXPIRATION_MINUTES,
@@ -66,6 +77,7 @@ module.exports = {
       port: envVars.SMTP_PORT_5,
       username : envVars.SMTP_USERNAME_5,
       password : envVars.SMTP_PASSWORD_5,
+      command: envVars.SMTP_COMMAND_5
     },
   },
 };
