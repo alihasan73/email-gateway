@@ -53,9 +53,20 @@
 # }
 
 
-POST http://localhost:3000/api/v1/email/status-single
+# POST http://localhost:3000/api/v1/email/status-single
+# Content-Type: application/json
+
+# {
+#   "mailid": "9424B7A0333"
+# }
+
+POST http://localhost:3000/api/v1/email/schedule
 Content-Type: application/json
 
 {
-  "mailid": "9424B7A0333"
+  "name": "Hasan Ali",
+  "to": "hasansanad73@gmail.com",
+  "subject": "Test Email scheduled",
+  "text": "This is a test email.",
+  "sendAt": "2025,8,27,12,42"
 }

@@ -1,6 +1,7 @@
 const { status } = require('http-status');
 const {catchAsync} = require('../utils/catchAsync.util');
-const {emailService} = require('../services');
+const {emailService, scheduleService} = require('../services');
+
 
 
 const sendEmail = catchAsync(async (req, res) => {
@@ -13,5 +14,9 @@ const checkStatus = catchAsync(async (req, res) => {
     const respon = await emailService.checkEmailStatus(mailid);
     res.status(status.OK).json({ respon });
 });
+const scheduleEmail = catchAsync(async (req, res) => {
+    const job = scheduleService.scheduleEmail(req.body);
+    res.status(status.OK).json({ job });
+});
 
-module.exports = {sendEmail, checkStatus}
+module.exports = {sendEmail, checkStatus, scheduleEmail}

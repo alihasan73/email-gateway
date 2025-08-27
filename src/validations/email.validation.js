@@ -14,5 +14,14 @@ const status = {
         mailid: Joi.string().required(),
     })
 }
+const schedule = {
+    body: Joi.object().keys({
+        name: Joi.string().required(),
+        to: Joi.string().email().required(),
+        subject: Joi.string().required(),
+        text: Joi.string().required(),
+        sendAt: Joi.string().required()
+    })
+}
 
-module.exports = { email, status };
+module.exports = { email, status, schedule };

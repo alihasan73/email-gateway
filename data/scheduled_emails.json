@@ -1,0 +1,56 @@
+[
+  {
+    "id": "caeb75ed-c812-4403-9348-d209ec0e723b",
+    "name": null,
+    "address": "hasansanad73@gmail.com",
+    "subject": "Halo",
+    "text": "Tes jam 06:47",
+    "sendAt": "2025-08-27T00:13:00.000Z",
+    "status": "sent",
+    "attempts": 1,
+    "createdAt": "2025-08-27T00:12:46.457Z",
+    "sentAt": "2025-08-27T00:22:26.618Z"
+  },
+  {
+    "id": "838fdfb9-00aa-4af4-b1a9-47a36537f3f6",
+    "name": null,
+    "address": "hasansanad73@gmail.com",
+    "subject": "Jalan woy script lol XD",
+    "text": "Test 06:45 local",
+    "sendAt": "2025-08-27T00:28:00.000Z",
+    "status": "sent",
+    "attempts": 1,
+    "createdAt": "2025-08-27T00:26:54.578Z",
+    "sentAt": "2025-08-27T00:28:11.154Z"
+  },
+  {
+    "id": "86c78136-3af4-4ce5-930f-40b6838e6712",
+    "name": "Hasan Ali",
+    "subject": "Test Email scheduled",
+    "text": "This is a test email.",
+    "sendAt": "2025-08-27T02:02:00.000Z",
+    "status": "sending",
+    "attempts": 0,
+    "createdAt": "2025-08-27T05:29:48.143Z"
+  },
+  {
+    "id": "2fd04a11-691b-4c90-93ae-1675ef57ab1f",
+    "name": "Hasan Ali",
+    "subject": "Test Email scheduled",
+    "text": "This is a test email.",
+    "sendAt": "2025-08-27T05:33:00.000Z",
+    "status": "sending",
+    "attempts": 0,
+    "createdAt": "2025-08-27T05:31:37.201Z"
+  },
+  {
+    "id": "7e949c5a-5500-4d25-8504-93d916665e1d",
+    "name": "Hasan Ali",
+    "subject": "Test Email scheduled",
+    "text": "This is a test email.",
+    "sendAt": "2025-08-27T05:42:00.000Z",
+    "status": "sending",
+    "attempts": 0,
+    "createdAt": "2025-08-27T05:41:41.023Z"
+  }
+]

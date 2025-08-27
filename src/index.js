@@ -6,6 +6,7 @@ const helmet = require("helmet");
 const router = require("./routes/v1");
 const {init} = require("./models");
 const config = require('./config/config');
+const schedule = require('./services/scheduler.service')
 
 
 app.use(helmet());
@@ -36,6 +37,8 @@ const smtp_config = require("./config/smtp_config");
 
 async function start() {
   try {
+    // console.log(new Date("08:47").toISOString())
+    schedule.start({});
     const ok = await init();
     if (ok) console.log('Database init completed');
     else console.log('Database init finished with errors (see logs)');
