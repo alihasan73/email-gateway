@@ -30,13 +30,6 @@ const bulkFormat = Joi.object({
     text: Joi.string().required(),
 })
 
-// const schemaArrayBulk = Joi.array().items(bulkFormat);
-// const schemaArrayBulk = {
-//     body: Joi.object().keys({
-//         emails: Joi.array().items(bulkFormat).required()
-//     })
-// };
-
 const schemaArrayBulk = {
   body: Joi.object({
     emails: Joi.array().items(bulkFormat).required()
