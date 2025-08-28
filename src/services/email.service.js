@@ -22,7 +22,36 @@ const checkEmailStatus = async (mailid) => {
     return result;
 }
 
+const sendBulkEmails = async (messages = [], options = {}) => {
+    const concurrency = Math.max(1, options.concurrency || 5);
+    const queue = Array.from(messages || []);
+    const results = [];
+
+    if (queue.length === 0) return results;
+
+    const worker = async () => {
+        while (queue.length > 0) {
+            const msg = queue.shift();
+            if (!msg || !msg.to) {
+                results.push({ to: msg && msg.to, success: false, error: 'invalid message' });
+                continue;
+            }
+            try {
+                const info = await sendEmail(msg.name || '', msg.to, msg.subject || '', msg.text || '');
+                results.push({ to: msg.to, success: true, info });
+            } catch (err) {
+                results.push({ to: msg.to, success: false, error: String(err) });
+            }
+        }
+    };
+
+    const workers = Array.from({ length: Math.min(concurrency, queue.length) }).map(() => worker());
+    await Promise.all(workers);
+    return results;
+};
+
 module.exports = {
     sendEmail,
-    checkEmailStatus
+    checkEmailStatus,
+    sendBulkEmails
 }

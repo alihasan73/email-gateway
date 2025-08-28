@@ -3,3 +3,4 @@
 /data
 /scripts
 /config/smtp_config.js
+requests.http

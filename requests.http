@@ -60,13 +60,34 @@
 #   "mailid": "9424B7A0333"
 # }
 
-POST http://localhost:3000/api/v1/email/schedule
+# POST http://localhost:3000/api/v1/email/schedule
+# Content-Type: application/json
+
+# {
+#   "name": "Hasan Ali",
+#   "to": "hasansanad73@gmail.com",
+#   "subject": "Test Email scheduled nodemon",
+#   "text": "This is a test email.",
+#   "sendAt": "2025,8,28,07,22"
+# }
+
+
+POST http://localhost:3000/api/v1/email/bulk
 Content-Type: application/json
 
 {
-  "name": "Hasan Ali",
-  "to": "hasansanad73@gmail.com",
-  "subject": "Test Email scheduled",
-  "text": "This is a test email.",
-  "sendAt": "2025,8,27,14,05"
+  "emails": [
+    {
+      "name": "Hasan Ali",
+      "to": "hasansanad73@gmail.com",
+      "subject": "Test Email 1",
+      "text": "This is a test email."
+    },
+    {
+      "name": "John Doe",
+      "to": "hasan@ptkei.co.id",
+      "subject": "Test Email 2",
+      "text": "This is another test email."
+    }
+  ]
 }

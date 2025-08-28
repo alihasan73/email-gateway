@@ -23,5 +23,24 @@ const schedule = {
         sendAt: Joi.string().required()
     })
 }
+const bulkFormat = Joi.object({
+    name: Joi.string().required(),
+    to: Joi.string().email().required(),
+    subject: Joi.string().required(),
+    text: Joi.string().required(),
+})
 
-module.exports = { email, status, schedule };
+// const schemaArrayBulk = Joi.array().items(bulkFormat);
+// const schemaArrayBulk = {
+//     body: Joi.object().keys({
+//         emails: Joi.array().items(bulkFormat).required()
+//     })
+// };
+
+const schemaArrayBulk = {
+  body: Joi.object({
+    emails: Joi.array().items(bulkFormat).required()
+  })
+};
+
+module.exports = { email, status, schedule, bulkFormat, schemaArrayBulk };

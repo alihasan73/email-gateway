@@ -47,16 +47,14 @@ function scheduleEmail({ name, to, subject, text, sendAt }) {
 async function trySend(job) {
   try {
     await emailService.sendEmail(job.name || '', job.to, job.subject, job.text);
-    console.log('Email sent to', job.to);
     return { success: true };
   } catch (err) {
-    console.log("Gagal kirim")
     return { success: false, error: String(err) };
   }
 }
 
 function start(options = {}) {
-  const intervalMs = options.intervalMs || 15000; // cek tiap 15s
+  const intervalMs = options.intervalMs || 30000; // cek tiap 30s
   const maxAttempts = options.maxAttempts || 3;
   ensureDataFile();
   console.log('Scheduler started (intervalMs=', intervalMs, ')');
@@ -68,15 +66,13 @@ function start(options = {}) {
       if ((job.status === 'scheduled' || job.status === 'failed') && job.attempts < maxAttempts) {
         const ts = Date.parse(job.sendAt);
         if (!Number.isNaN(ts) && ts <= now) {
-          console.log(ts);
+          const res = await trySend(job);
           job.status = 'sending';
           saveJobs(jobs);
-          const res = await trySend(job);
           job.attempts = (job.attempts||0) + 1;
           if (res.success) {
             job.status = 'sent';
             job.sentAt = new Date().toISOString();
-            console.log('Sent job', job.id);
           } else {
             job.lastError = res.error;
             job.lastAttemptAt = new Date().toISOString();

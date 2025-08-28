@@ -18,5 +18,10 @@ const scheduleEmail = catchAsync(async (req, res) => {
     const job = scheduleService.scheduleEmail(req.body);
     res.status(status.OK).json({ job });
 });
+const bulkEmails = catchAsync(async (req, res) => {
+    // console.log(req.body);
+    const results = await emailService.sendBulkEmails(req.body.emails);
+    res.status(status.OK).json({ results });
+})
 
-module.exports = {sendEmail, checkStatus, scheduleEmail}
+module.exports = {sendEmail, checkStatus, scheduleEmail, bulkEmails}

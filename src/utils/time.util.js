@@ -1,14 +1,3 @@
-/**
- * Utilities for converting date/time components to ISO strings.
- *
- * export:
- *  - toISOStringFromComponents(year, month, day, hour, minute, { mode: 'local'|'utc' })
- *
- * month is 1-12 (not zero-based)
- * mode 'local' (default) interprets the components as local time and returns ISO (UTC) string
- * mode 'utc' interprets the components as UTC directly.
- */
-
 function pad(n) { return n.toString().padStart(2, '0'); }
 
 function validateInt(name, v) {
