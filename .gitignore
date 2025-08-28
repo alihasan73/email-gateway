@@ -5,3 +5,4 @@
 /config/smtp_config.js
 requests.http
 /src/helpers/query.helper.js
+package-lock.json
