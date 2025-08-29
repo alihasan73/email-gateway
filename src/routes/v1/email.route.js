@@ -6,8 +6,12 @@ const { emailController} = require('../../controllers');
     
 
 router.post('/', validate(emailValidation.email), emailController.sendEmail);
+router.get('/track', emailController.trackEmail);
 router.post('/status-single', validate(emailValidation.status), emailController.checkStatus);
 router.post('/schedule', validate(emailValidation.schedule), emailController.scheduleEmail);
 router.post('/bulk', validate(emailValidation.schemaArrayBulk), emailController.bulkEmails);
+router.post('/mailtrap', validate(emailValidation.emailMailTrap), emailController.emailMailTrap);
+router.post('/webhook', emailController.handleWebhook);
+
 
 module.exports = router;

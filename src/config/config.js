@@ -35,6 +35,13 @@ const envVarsSchema = Joi.object()
     SMTP_USERNAME_5: Joi.string().description('SMTP username for the 5th email server'),
     SMTP_PASSWORD_5: Joi.string().description('SMTP password for the 5th email server'),
     SMTP_COMMAND_5: Joi.string().allow('').description('SMTP command for the 5th email server'),
+    MAILTRAP_TOKEN: Joi.string().description('MailTrap API token'),
+    MAILTRAP_INBOX_ID: Joi.string().description('MailTrap inbox ID'),
+    MAILTRAP_HOST: Joi.string().description('MailTrap SMTP host'),
+    MAILTRAP_PORT: Joi.number().description('MailTrap SMTP port'),
+    MAILTRAP_USERNAME: Joi.string().description('MailTrap SMTP username'),
+    MAILTRAP_PASSWORD: Joi.string().description('MailTrap SMTP password'),
+    MAILTRAP_FROM: Joi.string().description('MailTrap from email address'),
   })
   .unknown();
 
@@ -80,4 +87,13 @@ module.exports = {
       command: envVars.SMTP_COMMAND_5
     },
   },
+  mailtrap:{
+    host: envVars.MAILTRAP_HOST,
+    port: envVars.MAILTRAP_PORT,
+    auth : {
+      user: envVars.MAILTRAP_USERNAME,
+      pass: envVars.MAILTRAP_PASSWORD
+    }
+  },
+  mailtrap_from: envVars.MAILTRAP_FROM,
 };

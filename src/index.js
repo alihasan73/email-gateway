@@ -17,7 +17,7 @@ app.use("/api/v1", router);
 
 
 app.get("/", (req, res) => {
-  res.send("Hello World");
+  res.send("Hello World App Email Gateway!");
 })
 
 const {runRealtimeTail} = require("./helpers/logEntry.helper");
