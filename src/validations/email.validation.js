@@ -55,7 +55,7 @@ const webhook = {
     })
 }
 
-const emailMailTrap = {
+const emailSendGrid = {
     body: Joi.object().keys({
         name: Joi.string().required(),
         to: Joi.string().email().required(),
@@ -63,4 +63,4 @@ const emailMailTrap = {
         // text: Joi.string().required(),
     })
 }
-module.exports = { email, status, schedule, bulkFormat, schemaArrayBulk, schemaArraySubscribe, webhook, emailMailTrap };
+module.exports = { email, status, schedule, bulkFormat, schemaArrayBulk, schemaArraySubscribe, webhook, emailSendGrid };

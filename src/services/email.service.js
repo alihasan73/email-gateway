@@ -4,6 +4,8 @@ const {runCommandAndProcessLogs} = require('../utils/connServer.util');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const sgMail = require('@sendgrid/mail')
+const client = require('@sendgrid/client');
 
 const transporter = nodemailer.createTransport(config.email.smtp);
 const mailTrapTransporter = nodemailer.createTransport(config.mailtrap);
@@ -101,25 +103,51 @@ const trackEmail = async (mid, req, type = 'open') => {
     return { pixel, headers };
 }
 
-const sendEmailWithMailTrap = async (nameUser, addressUser) => {
-    const mailOptions = {
-        from: `${nameUser} <${config.mailtrap_from || config.email.from}>`,
-        to: addressUser,
-        subject: 'MailTrap Test Email',
-        text: 'This is a test email sent via MailTrap',
-        html: '<p>This is a test email sent via MailTrap</p>',
+const sendEmailWithSendGrid = async (nameUser, addressUser, options = {}) => {
+    // ensure API key set
+    sgMail.setApiKey(config.sendgrid.apiKey);
+
+    const toAddress = addressUser || options.to || 'hasansanad73@gmail.com';
+    const fromAddress = config.sendgrid.fromEmail;
+
+    // default tracking settings (open & click enabled)
+    const tracking_settings = {
+        click_tracking: { enable: true, enable_text: true },
+        open_tracking: { enable: true, substitution_tag: '' },
     };
-    await mailTrapTransporter.verify();
-    // console.log('Mailtrap connection OK');
-    let info = await mailTrapTransporter.sendMail(mailOptions);
-    console.log('sendMail info:', info);
-    // return info;
+
+    const mailOptions = {
+        to: toAddress,
+        from: fromAddress,
+        subject: options.subject || 'Sending with SendGrid is Fun',
+        text: options.text || 'and easy to do anywhere, even with Node.js',
+        html: options.html || '<strong>and easy to do anywhere, even with Node.js</strong>',
+        tracking_settings,
+    };
+
+    try {
+        const response = await sgMail.send(mailOptions);
+        console.log('Email sent via SendGrid', Array.isArray(response) ? response[0].statusCode : response.statusCode);
+        return response;
+    } catch (error) {
+        console.error('SendGrid send error:', error && error.message ? error.message : error);
+        // surface the full error for callers
+        throw error;
+    }
+};
+
+const webhookHandler = async (data) => {
+    // console.log('Webhook data received:', data);
+    client.setApiKey(config.sendgrid.apiKey);
+    
+
 }
 
 module.exports = {
     sendEmail,
     checkEmailStatus,
-    sendEmailWithMailTrap,
+    sendEmailWithSendGrid,
     sendBulkEmails,
-    trackEmail
+    trackEmail,
+    webhookHandler
 }

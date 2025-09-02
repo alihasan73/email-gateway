@@ -10,8 +10,10 @@ router.get('/track', emailController.trackEmail);
 router.post('/status-single', validate(emailValidation.status), emailController.checkStatus);
 router.post('/schedule', validate(emailValidation.schedule), emailController.scheduleEmail);
 router.post('/bulk', validate(emailValidation.schemaArrayBulk), emailController.bulkEmails);
-router.post('/mailtrap', validate(emailValidation.emailMailTrap), emailController.emailMailTrap);
-router.post('/webhook', emailController.handleWebhook);
-
+router.post('/sendgrid', emailController.emailSendGrid);
+router.post('/events-sendgrid', express.raw({ type: '*/*' }), emailController.emailEventSendgrid);
+router.post('/webhook-sendgrid', emailController.handleWebhook);
+router.get('/webhook-info', emailController.getWebhookInfo);
+// validate(emailValidation.emailSendGrid),
 
 module.exports = router;

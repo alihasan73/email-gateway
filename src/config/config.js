@@ -42,6 +42,8 @@ const envVarsSchema = Joi.object()
     MAILTRAP_USERNAME: Joi.string().description('MailTrap SMTP username'),
     MAILTRAP_PASSWORD: Joi.string().description('MailTrap SMTP password'),
     MAILTRAP_FROM: Joi.string().description('MailTrap from email address'),
+    SENDGRID_API_KEY: Joi.string().description('SendGrid API Key'),
+    SENDGRID_FROM_EMAIL: Joi.string().description('SendGrid from email address'),
   })
   .unknown();
 
@@ -96,4 +98,8 @@ module.exports = {
     }
   },
   mailtrap_from: envVars.MAILTRAP_FROM,
+  sendgrid: {
+    apiKey: envVars.SENDGRID_API_KEY,
+    fromEmail: envVars.SENDGRID_FROM_EMAIL,
+  },
 };

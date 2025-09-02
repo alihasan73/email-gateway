@@ -11,6 +11,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@sendgrid/eventwebhook": "^8.0.0",
+    "@sendgrid/mail": "^8.1.5",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
@@ -24,6 +26,7 @@
     "mysql2": "^3.14.3",
     "nodemailer": "^7.0.5",
     "passport": "^0.7.0",
+    "sequelize": "^6.37.7",
     "ssh2": "^1.17.0",
     "winston": "^3.17.0"
   }
