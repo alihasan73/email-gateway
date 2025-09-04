@@ -14,6 +14,7 @@ router.post('/sendgrid', emailController.emailSendGrid);
 router.post('/events-sendgrid', express.raw({ type: '*/*' }), emailController.emailEventSendgrid);
 router.post('/webhook-sendgrid', emailController.handleWebhook);
 router.get('/webhook-info', emailController.getWebhookInfo);
-// validate(emailValidation.emailSendGrid),
+router.get('/test', emailController.listEventWebhooks);
+router.get('/tracking', emailController.trackSendGrid);
 
 module.exports = router;

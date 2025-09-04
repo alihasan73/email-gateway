@@ -23,29 +23,22 @@ const scheduleEmail = catchAsync(async (req, res) => {
     const job = scheduleService.scheduleEmail(req.body);
     res.status(status.OK).json({ job });
 });
+
 const bulkEmails = catchAsync(async (req, res) => {
     const results = await emailService.sendBulkEmails(req.body.emails);
     res.status(status.OK).json({ results });
 });
+
 const subscribeEmail = catchAsync(async (req, res) => {
     const { name, to } = req.body;
     await emailService.subscribeEmail(name, to);
     res.status(status.OK).json({ message: 'Subscription successful' });
 });
 
-const trackEmail = catchAsync(async (req, res) => {
-    const { mid, type = 'open' } = req.query;
-    if (!mid) return res.status(status.BAD_REQUEST).send('missing mid');
-    const result = await emailService.trackEmail(mid, req, type);
-    if (!result) return res.status(status.INTERNAL_SERVER_ERROR).send('tracking error');
-    res.set(result.headers);
-    res.status(status.OK).send(result.pixel);
-})
-
 const emailSendGrid = catchAsync(async (req, res) => {
     // const { name, to } = req.body;
     await emailService.sendEmailWithSendGrid();
-    res.status(status.OK).json({ message: 'Email sent successfully via MailTrap' });
+    res.status(status.OK).json({ message: 'Email sent successfully via SendGrid' });
 });
 
 const emailEventSendgrid = catchAsync(async (req, res) => {
@@ -66,28 +59,25 @@ const emailEventSendgrid = catchAsync(async (req, res) => {
     console.log('- Signature:', signature ? 'Present' : 'Missing');
     console.log('- Timestamp:', timestamp || 'Missing');
 
-    // Untuk development, kita bisa skip verification
-    // Uncomment untuk production dengan public key yang benar
-    /*
-    const publicKey = config.sendgrid.publicKey; // pastikan ada di config
-    if (!publicKey) {
-        console.error('❌ Missing SendGrid public key for webhook verification');
-        return res.status(500).send('server misconfiguration');
+    // Verify signature if public key configured
+    const publicKey = config.sendgrid?.publicKey || process.env.SENDGRID_PUBLIC_KEY;
+    if (publicKey) {
+        try {
+            const verified = eventWebhook.verify(signature, raw, timestamp, publicKey);
+            console.log('- Signature verification:', verified ? 'passed' : 'FAILED');
+            if (!verified) {
+                console.error('❌ Event webhook signature verification failed');
+                return res.status(401).send('signature verification failed');
+            }
+        } catch (err) {
+            console.error('❌ Error during signature verification:', err && err.message ? err.message : err);
+            return res.status(500).send('verification error');
+        }
+    } else {
+        console.warn('⚠️ No SendGrid public key configured — skipping signature verification. Set SENDGRID_PUBLIC_KEY in env/config to enable verification.');
     }
 
-    let valid = false;
-    try {
-        valid = eventWebhook.verifySignature(raw, signature, timestamp, publicKey);
-    } catch (err) {
-        console.error('❌ Signature verify error:', err.message);
-        return res.status(401).send('invalid signature');
-    }
-
-    if (!valid) {
-        console.log('❌ Invalid signature');
-        return res.status(401).send('invalid signature');
-    }
-    */
+    
 
     // Parse events
     let events;
@@ -96,6 +86,14 @@ const emailEventSendgrid = catchAsync(async (req, res) => {
     } catch (err) {
         console.error('❌ Invalid JSON payload:', err.message);
         return res.status(400).send('invalid payload');
+    }
+
+    // persist/enrich events via service
+    try {
+        await emailService.webhookHandler(events);
+        console.log('✅ Events processed and persisted by emailService');
+    } catch (e) {
+        console.error('❌ Failed to process events via service:', e && e.message ? e.message : e);
     }
 
     // Display event details
@@ -191,6 +189,20 @@ const emailEventSendgrid = catchAsync(async (req, res) => {
     return res.sendStatus(200);
 });
 
+const trackEmail = catchAsync(async (req, res) => {
+    // serve a tracking pixel and persist event via service
+    const mid = req.query.mid || req.params.mid || null;
+    const result = await emailService.trackEmail(mid, req, 'open');
+    // result should contain { pixel, headers }
+    if (result && result.headers) {
+        Object.entries(result.headers).forEach(([k, v]) => {
+            try { res.set(k, v); } catch (e) { /* ignore header set errors */ }
+        });
+    }
+    const pixel = result && result.pixel ? result.pixel : Buffer.from('');
+    return res.status(200).send(pixel);
+});
+
 const handleWebhook = catchAsync(async (req, res) => {
     console.log('\n=== Setting up SendGrid Webhook ===');
     
@@ -229,6 +241,7 @@ const handleWebhook = catchAsync(async (req, res) => {
         friendly_name: friendlyName,
     };
 
+
     console.log('Webhook URL:', webhookUrl);
     console.log('Configuration:', JSON.stringify(data, null, 2));
 
@@ -242,9 +255,11 @@ const handleWebhook = catchAsync(async (req, res) => {
         const [response, body] = await client.request(request);
         
         console.log('✅ Webhook setup successful');
-        console.log('Status Code:', response.statusCode);
         console.log('Response Body:', JSON.stringify(body, null, 2));
         
+        console.log("testing-testing");
+        console.log('raw response:', response);   // status, headers, dll
+        console.log('body:', body); 
         res.status(200).json({
             message: 'Webhook configured successfully',
             statusCode: response.statusCode,
@@ -314,4 +329,45 @@ const getWebhookInfo = catchAsync(async (req, res) => {
     });
 });
 
-module.exports = {sendEmail, checkStatus, scheduleEmail, bulkEmails, subscribeEmail, trackEmail, handleWebhook, emailSendGrid, emailEventSendgrid, getWebhookInfo};
+const listEventWebhooks = catchAsync(async (req, res) => {
+    const apiKey = config.sendgrid?.apiKey || process.env.SENDGRID_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'SendGrid API key not configured' });
+    client.setApiKey(apiKey);
+
+    const request = {
+        url: `/v3/user/webhooks/event/settings/all  `,
+        method: 'GET',
+    };
+
+    try {
+        const [response, body] = await client.request(request);
+        console.log('SendGrid list webhooks response:', response.statusCode);
+        return res.status(response.statusCode || 200).json({ statusCode: response.statusCode, body });
+    } catch (error) {
+        console.error('SendGrid list webhooks error:', error.response ? error.response.body : error);
+        return res.status(500).json({ error: error.response ? error.response.body : String(error) });
+    }
+});
+
+const trackSendGrid = catchAsync(async (req, res) => {
+    const apiKey = config.sendgrid?.apiKey || process.env.SENDGRID_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'SendGrid API key not configured' });
+    client.setApiKey(apiKey);
+
+    const request = {
+        url: `/v3/tracking_settings`,
+        method: 'GET',
+    };
+
+    try {
+        const [response, body] = await client.request(request);
+        console.log('SendGrid test webhook response:', response.statusCode);
+        return res.status(200).json({ statusCode: response.statusCode, body });
+    } catch (error) {
+        console.log(error);
+        console.error('SendGrid test webhook error:', error.response ? error.response.body : error);
+        return res.status(500).json({ error: error.response ? error.response.body : String(error) });
+    }
+});
+
+module.exports = {sendEmail, checkStatus, scheduleEmail, bulkEmails, subscribeEmail, handleWebhook, emailSendGrid, emailEventSendgrid, getWebhookInfo, trackEmail, listEventWebhooks, trackSendGrid};
