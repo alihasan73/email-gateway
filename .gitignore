@@ -2,9 +2,7 @@
 .env
 /data
 /scripts
-/config/smtp_config.js
 requests.http
-/src/helpers/query.helper.js
 package-lock.json
 webhook-test.http
 WEBHOOK_SENDGRID.md

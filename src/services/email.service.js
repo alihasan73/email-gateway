@@ -6,9 +6,12 @@ const fs = require('fs');
 const path = require('path');
 const sgMail = require('@sendgrid/mail')
 const client = require('@sendgrid/client');
+const { status } = require('http-status');
 
 const transporter = nodemailer.createTransport(config.email.smtp);
-const mailTrapTransporter = nodemailer.createTransport(config.mailtrap);
+
+const { EventWebhook } = require('@sendgrid/eventwebhook');
+const eventWebhook = new EventWebhook();
 
 const sendEmail = async (nameUser, addressUser, subject, text, html = null, options = {}) => {
     const mid = crypto.randomBytes(12).toString('hex');
@@ -94,55 +97,12 @@ const sendBulkEmails = async (messages = [], options = {}) => {
     return results;
 };
 
-const trackEmail = async (mid, req, type = 'open') => {
-    const eventsFile = path.resolve(__dirname, '../../data/email_events.json');
-    let events = [];
-    try {
-        if (fs.existsSync(eventsFile)) {
-            const raw = fs.readFileSync(eventsFile, 'utf8') || '[]';
-            events = JSON.parse(raw || '[]');
-        }
-    } catch (e) {
-        // ignore parse errors and continue with empty events
-        events = [];
-    }
 
-    const event = {
-        mid,
-        type,
-        ts: new Date().toISOString(),
-        ip: req && req.ip,
-        ua: req && (req.get && req.get('user-agent') || ''),
-    };
-    events.push(event);
-    try {
-        // atomic-ish write
-        const tmp = eventsFile + '.tmp';
-        fs.writeFileSync(tmp, JSON.stringify(events, null, 2), 'utf8');
-        fs.renameSync(tmp, eventsFile);
-    } catch (e) {
-        // best-effort: ignore write errors to not break tracking
-    }
-
-    const pixel = Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=',
-        'base64'
-    );
-    const headers = {
-        'Content-Type': 'image/png',
-        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-        Pragma: 'no-cache',
-        Expires: '0',
-    };
-
-    return { pixel, headers };
-}
 
 const sendEmailWithSendGrid = async (nameUser, addressUser, options = {}) => {
-    // ensure API key set
     sgMail.setApiKey(config.sendgrid.apiKey);
 
-    const toAddress = addressUser || options.to || 'hasansanad73@gmail.com';
+    const toAddress = addressUser;
     const fromAddress = config.sendgrid.fromEmail;
 
     // default tracking settings (open & click enabled)
@@ -294,11 +254,228 @@ const webhookHandler = async (data) => {
     return { ok: true, processed: events.length };
 }
 
+// register or update SendGrid Event Webhook settings via SendGrid API
+const registerWebhook = async (webhookUrl, friendlyName) => {
+    const apiKey = config.sendgrid?.apiKey || process.env.SENDGRID_API_KEY;
+    if (!apiKey) {
+        const err = new Error('SendGrid API Key not configured');
+        err.statusCode = status.INTERNAL_SERVER_ERROR ;
+        throw err;
+    }
+    client.setApiKey(apiKey);
+    if (!webhookUrl) {
+        const err = new Error('webhookUrl is required');
+        err.statusCode = status.BAD_REQUEST ;
+        throw err;
+    }
+    const data = {
+        enabled: true,
+        url: webhookUrl,
+        group_resubscribe: true,
+        delivered: true,
+        group_unsubscribe: true,
+        spam_report: true,
+        bounce: true,
+        deferred: true,
+        unsubscribe: true,
+        processed: true,
+        open: true,
+        click: true,
+        dropped: true,
+        friendly_name: friendlyName,
+    };
+    const request = {
+        url: `/v3/user/webhooks/event/settings`,
+        method: 'POST',
+        body: data,
+    };
+    const [response, body] = await client.request(request);
+    return {
+        message: 'Webhook configured successfully',
+        statusCode: response.statusCode,
+        webhookUrl,
+        configuration: data,
+        response: body,
+    };
+};
+
+const eventSendgrid = async (req) => {
+    console.log('\n=== SendGrid Webhook Event Received ===');
+    console.log('Timestamp:', new Date().toISOString());
+    if (!req.body) {
+        console.log('❌ Empty payload received');
+        return { code: status.BAD_REQUEST, message: 'empty payload' };
+    }
+
+    const raw = Buffer.isBuffer(req.body) ? req.body.toString() : (typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
+    const signature = req.get ? req.get('x-twilio-email-event-webhook-signature') : null;
+    const timestamp = req.get ? req.get('x-twilio-email-event-webhook-timestamp') : null;
+
+    console.log('Headers received:');
+    console.log('- Signature:', signature ? 'Present' : 'Missing');
+    console.log('- Timestamp:', timestamp || 'Missing');
+
+    const publicKey = config.sendgrid?.publicKey || process.env.SENDGRID_PUBLIC_KEY;
+    if (publicKey) {
+        try {
+            const verified = eventWebhook.verify(signature, raw, timestamp, publicKey);
+            console.log('- Signature verification:', verified ? 'passed' : 'FAILED');
+            if (!verified) {
+                console.error('❌ Event webhook signature verification failed');
+                return { code: status.UNAUTHORIZED, message: 'signature verification failed' };
+            }
+        } catch (err) {
+            console.error('❌ Error during signature verification:', err && err.message ? err.message : err);
+            return { code: status.INTERNAL_SERVER_ERROR, message: 'verification error' };
+        }
+    } else {
+        console.warn('⚠️ No SendGrid public key configured — skipping signature verification. Set SENDGRID_PUBLIC_KEY in env/config to enable verification.');
+    }
+
+    let events;
+    try {
+        events = JSON.parse(raw);
+    } catch (err) {
+        console.error('❌ Invalid JSON payload:', err.message);
+        return { code: status.BAD_REQUEST, message: 'invalid payload' };
+    }
+
+    try {
+        await webhookHandler(events);
+        console.log('✅ Events processed and persisted by emailService');
+    } catch (e) {
+        console.error('❌ Failed to process events via service:', e && e.message ? e.message : e);
+        return { code: status.INTERNAL_SERVER_ERROR, message: 'failed to process events' };
+    }
+
+    // Display event details
+    if (Array.isArray(events)) {
+        console.log(`📧 Received ${events.length} event(s)`);
+        events.forEach((event, index) => {
+            console.log(`\n--- Event ${index + 1} ---`);
+            console.log('Event Type:', event.event || 'Unknown');
+            console.log('Email:', event.email || 'Unknown');
+            console.log('Timestamp:', event.timestamp ? new Date(event.timestamp * 1000).toISOString() : 'Unknown');
+            console.log('Message ID:', event.sg_message_id || 'Unknown');
+            console.log('Event ID:', event.sg_event_id || 'Unknown');
+            switch(event.event) {
+                case 'delivered':
+                    console.log('✅ Email delivered successfully');
+                    if (event.response) console.log('Response:', event.response);
+                    break;
+                case 'bounce':
+                    console.log('❌ Email bounced');
+                    console.log('Reason:', event.reason || 'Unknown');
+                    console.log('Type:', event.type || 'Unknown');
+                    break;
+                case 'open':
+                    console.log('👁️ Email opened');
+                    console.log('User Agent:', event.useragent || 'Unknown');
+                    console.log('IP:', event.ip || 'Unknown');
+                    break;
+                case 'click':
+                    console.log('🔗 Link clicked');
+                    console.log('URL:', event.url || 'Unknown');
+                    console.log('User Agent:', event.useragent || 'Unknown');
+                    console.log('IP:', event.ip || 'Unknown');
+                    break;
+                case 'spam':
+                    console.log('🚫 Email marked as spam');
+                    break;
+                case 'unsubscribe':
+                    console.log('🚪 User unsubscribed');
+                    break;
+                case 'dropped':
+                    console.log('🗑️ Email dropped');
+                    console.log('Reason:', event.reason || 'Unknown');
+                    break;
+                case 'deferred':
+                    console.log('⏳ Email deferred');
+                    console.log('Reason:', event.reason || 'Unknown');
+                    if (event.attempt) console.log('Attempt:', event.attempt);
+                    break;
+                case 'processed':
+                    console.log('⚙️ Email processed by SendGrid');
+                    break;
+                default:
+                    console.log('🔍 Other event type');
+            }
+            if (event.category && event.category.length > 0) {
+                console.log('Categories:', event.category.join(', '));
+            }
+            if (event.asm_group_id) {
+                console.log('ASM Group ID:', event.asm_group_id);
+            }
+            if (event.marketing_campaign_id) {
+                console.log('Campaign ID:', event.marketing_campaign_id);
+            }
+            if (event.marketing_campaign_name) {
+                console.log('Campaign Name:', event.marketing_campaign_name);
+            }
+            console.log('Raw Event Data:', JSON.stringify(event, null, 2));
+        });
+    } else {
+        console.log('📧 Received single event');
+        console.log('Raw Data:', JSON.stringify(events, null, 2));
+    }
+    console.log('=== End of SendGrid Webhook Event ===\n');
+    return { code: status.OK, message: 'events processed' };
+};
+
+const webhookInfo = (req) => {
+    const { protocol, hostname } = req;
+    // extract port if present
+    const port = req.get('host').split(':')[1];
+    const baseUrl = `${protocol}://${hostname}${port ? ':' + port : ''}`;
+    const webhookEndpoint = `${baseUrl}/api/v1/email/events-sendgrid`;
+    return {
+        message: 'SendGrid Webhook Information',
+        endpoints: {
+            webhook_receiver: {
+                url: webhookEndpoint,
+                method: 'POST',
+                description: 'Receives real-time events from SendGrid',
+                content_type: 'application/json',
+                note: 'Events will be displayed in the server console'
+            },
+            webhook_setup: {
+                url: `${baseUrl}/api/v1/email/webhook-sendgrid`,
+                method: 'POST',
+                description: 'Configure SendGrid webhook settings',
+                body_example: {
+                    webhookUrl: webhookEndpoint,
+                    friendlyName: 'My Email Gateway Webhook'
+                }
+            }
+        },
+        supported_events: [
+            'delivered',
+            'bounce',
+            'open',
+            'click',
+            'spam',
+            'unsubscribe',
+            'dropped',
+            'deferred',
+            'processed'
+        ],
+        setup_instructions: [
+            '1. Make sure your SendGrid API key is configured in environment variables',
+            '2. Use the webhook_setup endpoint to register your webhook with SendGrid',
+            '3. Send test emails through SendGrid',
+            '4. Monitor the server console for real-time event logs'
+        ]
+    };
+};
+
 module.exports = {
     sendEmail,
     checkEmailStatus,
     sendEmailWithSendGrid,
     sendBulkEmails,
-    trackEmail,
-    webhookHandler
+    webhookHandler,
+    registerWebhook,
+    eventSendgrid,
+    webhookInfo
 }
+

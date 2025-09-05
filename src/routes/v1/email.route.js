@@ -6,15 +6,12 @@ const { emailController} = require('../../controllers');
     
 
 router.post('/', validate(emailValidation.email), emailController.sendEmail);
-router.get('/track', emailController.trackEmail);
-router.post('/status-single', validate(emailValidation.status), emailController.checkStatus);
+router.post('/status', validate(emailValidation.status), emailController.checkStatus);
 router.post('/schedule', validate(emailValidation.schedule), emailController.scheduleEmail);
 router.post('/bulk', validate(emailValidation.schemaArrayBulk), emailController.bulkEmails);
-router.post('/sendgrid', emailController.emailSendGrid);
-router.post('/events-sendgrid', express.raw({ type: '*/*' }), emailController.emailEventSendgrid);
-router.post('/webhook-sendgrid', emailController.handleWebhook);
-router.get('/webhook-info', emailController.getWebhookInfo);
-router.get('/test', emailController.listEventWebhooks);
-router.get('/tracking', emailController.trackSendGrid);
+router.post('/sendgrid',validate(emailValidation.emailSendGrid), emailController.emailSendGrid);
+router.post('/events-sendgrid', emailController.emailEventSendgrid);
+router.post('/webhook-sendgrid', validate(emailValidation.registerSendGridWebhook), emailController.registerSendGridWebhook);
+router.get('/webhook-info', emailController.getSendGridWebhookInfo);
 
 module.exports = router;

@@ -10,6 +10,9 @@ const schedule = require('./services/scheduler.service')
 
 app.use(helmet());
 app.use(cors());
+// IMPORTANT: Accept raw body for SendGrid Event Webhook before JSON parser
+// This preserves the exact payload for signature verification and correct parsing
+app.use('/api/v1/email/events-sendgrid', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

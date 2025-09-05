@@ -1,6 +1,7 @@
 const dotenv = require('dotenv');
 const path = require('path');
 const Joi = require('joi');
+const e = require('express');
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
@@ -35,15 +36,10 @@ const envVarsSchema = Joi.object()
     SMTP_USERNAME_5: Joi.string().description('SMTP username for the 5th email server'),
     SMTP_PASSWORD_5: Joi.string().description('SMTP password for the 5th email server'),
     SMTP_COMMAND_5: Joi.string().allow('').description('SMTP command for the 5th email server'),
-    MAILTRAP_TOKEN: Joi.string().description('MailTrap API token'),
-    MAILTRAP_INBOX_ID: Joi.string().description('MailTrap inbox ID'),
-    MAILTRAP_HOST: Joi.string().description('MailTrap SMTP host'),
-    MAILTRAP_PORT: Joi.number().description('MailTrap SMTP port'),
-    MAILTRAP_USERNAME: Joi.string().description('MailTrap SMTP username'),
-    MAILTRAP_PASSWORD: Joi.string().description('MailTrap SMTP password'),
-    MAILTRAP_FROM: Joi.string().description('MailTrap from email address'),
     SENDGRID_API_KEY: Joi.string().description('SendGrid API Key'),
     SENDGRID_FROM_EMAIL: Joi.string().description('SendGrid from email address'),
+    ROOT_EMAILS: Joi.string().description('Comma-separated list of root email addresses'),
+    TO_EMAILS: Joi.string().description('Comma-separated list of to email addresses'),
   })
   .unknown();
 
@@ -88,18 +84,14 @@ module.exports = {
       password : envVars.SMTP_PASSWORD_5,
       command: envVars.SMTP_COMMAND_5
     },
-  },
-  mailtrap:{
-    host: envVars.MAILTRAP_HOST,
-    port: envVars.MAILTRAP_PORT,
-    auth : {
-      user: envVars.MAILTRAP_USERNAME,
-      pass: envVars.MAILTRAP_PASSWORD
+    valid:{
+        rootEmails : envVars.ROOT_EMAILS.split(','),
+        toEmail : envVars.TO_EMAILS.split(',')
     }
   },
-  mailtrap_from: envVars.MAILTRAP_FROM,
   sendgrid: {
     apiKey: envVars.SENDGRID_API_KEY,
     fromEmail: envVars.SENDGRID_FROM_EMAIL,
   },
+
 };

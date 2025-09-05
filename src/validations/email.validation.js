@@ -59,8 +59,13 @@ const emailSendGrid = {
     body: Joi.object().keys({
         name: Joi.string().required(),
         to: Joi.string().email().required(),
-        // subject: Joi.string().required(),
-        // text: Joi.string().required(),
     })
 }
-module.exports = { email, status, schedule, bulkFormat, schemaArrayBulk, schemaArraySubscribe, webhook, emailSendGrid };
+
+const registerSendGridWebhook = {
+    body: Joi.object().keys({
+        url: Joi.string().uri().required(),
+        name: Joi.string().optional(),
+    })
+}
+module.exports = { email, status, schedule, bulkFormat, schemaArrayBulk, schemaArraySubscribe, webhook, emailSendGrid, registerSendGridWebhook };
