@@ -7,6 +7,7 @@ const path = require('path');
 const sgMail = require('@sendgrid/mail')
 const client = require('@sendgrid/client');
 const { status } = require('http-status');
+const logger = require('../config/logger.config');
 
 const transporter = nodemailer.createTransport(config.email.smtp);
 
@@ -163,10 +164,10 @@ const sendEmailWithSendGrid = async (nameUser, addressUser, options = {}) => {
             // ignore write errors
         }
 
-        console.log('Email sent via SendGrid', Array.isArray(response) ? response[0].statusCode : response.statusCode);
+        // // console.log'Email sent via SendGrid', Array.isArray(response) ? response[0].statusCode : response.statusCode);
         return response;
     } catch (error) {
-        console.error('SendGrid send error:', error && error.message ? error.message : error);
+        // console.error('SendGrid send error:', error && error.message ? error.message : error);
         // surface the full error for callers
         throw error;
     }
@@ -255,6 +256,7 @@ const webhookHandler = async (data) => {
 }
 
 // register or update SendGrid Event Webhook settings via SendGrid API
+
 const registerWebhook = async (webhookUrl, friendlyName) => {
     const apiKey = config.sendgrid?.apiKey || process.env.SENDGRID_API_KEY;
     if (!apiKey) {
@@ -300,10 +302,10 @@ const registerWebhook = async (webhookUrl, friendlyName) => {
 };
 
 const eventSendgrid = async (req) => {
-    console.log('\n=== SendGrid Webhook Event Received ===');
-    console.log('Timestamp:', new Date().toISOString());
+    // console.log'\n=== SendGrid Webhook Event Received ===');
+    // console.log'Timestamp:', new Date().toISOString());
     if (!req.body) {
-        console.log('❌ Empty payload received');
+        // console.log'❌ Empty payload received');
         return { code: status.BAD_REQUEST, message: 'empty payload' };
     }
 
@@ -311,15 +313,15 @@ const eventSendgrid = async (req) => {
     const signature = req.get ? req.get('x-twilio-email-event-webhook-signature') : null;
     const timestamp = req.get ? req.get('x-twilio-email-event-webhook-timestamp') : null;
 
-    console.log('Headers received:');
-    console.log('- Signature:', signature ? 'Present' : 'Missing');
-    console.log('- Timestamp:', timestamp || 'Missing');
+    // console.log'Headers received:');
+    // console.log'- Signature:', signature ? 'Present' : 'Missing');
+    // console.log'- Timestamp:', timestamp || 'Missing');
 
     const publicKey = config.sendgrid?.publicKey || process.env.SENDGRID_PUBLIC_KEY;
     if (publicKey) {
         try {
             const verified = eventWebhook.verify(signature, raw, timestamp, publicKey);
-            console.log('- Signature verification:', verified ? 'passed' : 'FAILED');
+            // console.log'- Signature verification:', verified ? 'passed' : 'FAILED');
             if (!verified) {
                 console.error('❌ Event webhook signature verification failed');
                 return { code: status.UNAUTHORIZED, message: 'signature verification failed' };
@@ -329,7 +331,7 @@ const eventSendgrid = async (req) => {
             return { code: status.INTERNAL_SERVER_ERROR, message: 'verification error' };
         }
     } else {
-        console.warn('⚠️ No SendGrid public key configured — skipping signature verification. Set SENDGRID_PUBLIC_KEY in env/config to enable verification.');
+        // console.warn('⚠️ No SendGrid public key configured — skipping signature verification. Set SENDGRID_PUBLIC_KEY in env/config to enable verification.');
     }
 
     let events;
@@ -342,7 +344,7 @@ const eventSendgrid = async (req) => {
 
     try {
         await webhookHandler(events);
-        console.log('✅ Events processed and persisted by emailService');
+        // console.log'✅ Events processed and persisted by emailService');
     } catch (e) {
         console.error('❌ Failed to process events via service:', e && e.message ? e.message : e);
         return { code: status.INTERNAL_SERVER_ERROR, message: 'failed to process events' };
@@ -350,84 +352,84 @@ const eventSendgrid = async (req) => {
 
     // Display event details
     if (Array.isArray(events)) {
-        console.log(`📧 Received ${events.length} event(s)`);
+        // console.log`📧 Received ${events.length} event(s)`);
         events.forEach((event, index) => {
-            console.log(`\n--- Event ${index + 1} ---`);
-            console.log('Event Type:', event.event || 'Unknown');
-            console.log('Email:', event.email || 'Unknown');
-            console.log('Timestamp:', event.timestamp ? new Date(event.timestamp * 1000).toISOString() : 'Unknown');
-            console.log('Message ID:', event.sg_message_id || 'Unknown');
-            console.log('Event ID:', event.sg_event_id || 'Unknown');
+            // console.log`\n--- Event ${index + 1} ---`);
+            // console.log'Event Type:', event.event || 'Unknown');
+            // console.log'Email:', event.email || 'Unknown');
+            // console.log'Timestamp:', event.timestamp ? new Date(event.timestamp * 1000).toISOString() : 'Unknown');
+            // console.log'Message ID:', event.sg_message_id || 'Unknown');
+            // console.log'Event ID:', event.sg_event_id || 'Unknown');
             switch(event.event) {
                 case 'delivered':
-                    console.log('✅ Email delivered successfully');
-                    if (event.response) console.log('Response:', event.response);
+                    // console.log'✅ Email delivered successfully');
+                    if (event.response) // console.log'Response:', event.response);
                     break;
                 case 'bounce':
-                    console.log('❌ Email bounced');
-                    console.log('Reason:', event.reason || 'Unknown');
-                    console.log('Type:', event.type || 'Unknown');
+                    // console.log'❌ Email bounced');
+                    // console.log'Reason:', event.reason || 'Unknown');
+                    // console.log'Type:', event.type || 'Unknown');
                     break;
                 case 'open':
-                    console.log('👁️ Email opened');
-                    console.log('User Agent:', event.useragent || 'Unknown');
-                    console.log('IP:', event.ip || 'Unknown');
+                    // console.log'👁️ Email opened');
+                    // console.log'User Agent:', event.useragent || 'Unknown');
+                    // console.log'IP:', event.ip || 'Unknown');
                     break;
                 case 'click':
-                    console.log('🔗 Link clicked');
-                    console.log('URL:', event.url || 'Unknown');
-                    console.log('User Agent:', event.useragent || 'Unknown');
-                    console.log('IP:', event.ip || 'Unknown');
+                    // console.log'🔗 Link clicked');
+                    // console.log'URL:', event.url || 'Unknown');
+                    // console.log'User Agent:', event.useragent || 'Unknown');
+                    // console.log'IP:', event.ip || 'Unknown');
                     break;
                 case 'spam':
-                    console.log('🚫 Email marked as spam');
+                    // console.log'🚫 Email marked as spam');
                     break;
                 case 'unsubscribe':
-                    console.log('🚪 User unsubscribed');
+                    // console.log'🚪 User unsubscribed');
                     break;
                 case 'dropped':
-                    console.log('🗑️ Email dropped');
-                    console.log('Reason:', event.reason || 'Unknown');
+                    // console.log'🗑️ Email dropped');
+                    // console.log'Reason:', event.reason || 'Unknown');
                     break;
                 case 'deferred':
-                    console.log('⏳ Email deferred');
-                    console.log('Reason:', event.reason || 'Unknown');
-                    if (event.attempt) console.log('Attempt:', event.attempt);
+                    // console.log'⏳ Email deferred');
+                    // console.log'Reason:', event.reason || 'Unknown');
+                    if (event.attempt) // console.log'Attempt:', event.attempt);
                     break;
                 case 'processed':
-                    console.log('⚙️ Email processed by SendGrid');
+                    // console.log'⚙️ Email processed by SendGrid');
                     break;
                 default:
-                    console.log('🔍 Other event type');
+                    // console.log'🔍 Other event type');
             }
             if (event.category && event.category.length > 0) {
-                console.log('Categories:', event.category.join(', '));
+                // console.log'Categories:', event.category.join(', '));
             }
             if (event.asm_group_id) {
-                console.log('ASM Group ID:', event.asm_group_id);
+                // console.log'ASM Group ID:', event.asm_group_id);
             }
             if (event.marketing_campaign_id) {
-                console.log('Campaign ID:', event.marketing_campaign_id);
+                // console.log'Campaign ID:', event.marketing_campaign_id);
             }
             if (event.marketing_campaign_name) {
-                console.log('Campaign Name:', event.marketing_campaign_name);
+                // console.log'Campaign Name:', event.marketing_campaign_name);
             }
-            console.log('Raw Event Data:', JSON.stringify(event, null, 2));
+            // console.log'Raw Event Data:', JSON.stringify(event, null, 2));
         });
     } else {
-        console.log('📧 Received single event');
-        console.log('Raw Data:', JSON.stringify(events, null, 2));
+        // console.log'📧 Received single event');
+        // console.log'Raw Data:', JSON.stringify(events, null, 2));
     }
-    console.log('=== End of SendGrid Webhook Event ===\n');
+    // console.log'=== End of SendGrid Webhook Event ===\n');
     return { code: status.OK, message: 'events processed' };
 };
 
 const webhookInfo = (req) => {
     const { protocol, hostname } = req;
-    // extract port if present
     const port = req.get('host').split(':')[1];
     const baseUrl = `${protocol}://${hostname}${port ? ':' + port : ''}`;
     const webhookEndpoint = `${baseUrl}/api/v1/email/events-sendgrid`;
+    logger.info(`Akses endpoint /webhook-info oleh ${req.ip || req.connection.remoteAddress}`);
     return {
         message: 'SendGrid Webhook Information',
         endpoints: {

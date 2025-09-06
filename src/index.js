@@ -6,6 +6,8 @@ const router = require("./routes/v1");
 const {init} = require("./models");
 const config = require('./config/config');
 const schedule = require('./services/scheduler.service')
+const swaggerUi = require('swagger-ui-express');
+const { loadSpec } = require('./swagger');
 
 
 app.use(helmet());
@@ -17,6 +19,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1", router);
+
+// Swagger UI (interactive API docs)
+const spec = loadSpec();
+if (spec) {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+}
 
 
 app.get("/", (req, res) => {

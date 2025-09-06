@@ -128,6 +128,15 @@ function processLogEntry(logEntry) {
   return null;
 }
 
+function mergeData(existing, update) {
+  const merged = { ...existing };
+  for (const k in update) {
+    if (Object.prototype.hasOwnProperty.call(update, k)) {
+      if (update[k] !== null && update[k] !== undefined) merged[k] = update[k];
+    }
+  }
+  return merged;
+}
 
 function runCommandAndProcessLogs(options = {}) {
   const conn = new Client();
@@ -163,20 +172,20 @@ function runCommandAndProcessLogs(options = {}) {
                 // console.log(line);
                 try {
                   const logData = processLogEntry(line);
-                  console.log(logData);
-                //   if (!logData) continue;
-                //   if (logData.error === "Connection timed out") continue;
-                //   if (checkDataRootTemp(logData)) continue;
+                  // console.log(logData);
+                  if (!logData) continue;
+                  if (logData.error === "Connection timed out") continue;
+                  if (checkDataRootTemp(logData)) continue;
 
-                //   const mailid = logData.mailid;
-                //   const dbResult = await queryDatabase(mailid, tableName);
+                  const mailid = logData.mailid;
+                  const dbResult = await queryDatabase(mailid, tableName);
 
-                //   if (dbResult && dbResult.length > 0) {
-                //     const merged = mergeData(dbResult[0], logData);
-                //     await updateDataLog(merged, tableName);
-                //   } else {
-                //     await insertDataLog(logData, tableName);
-                //   }
+                  if (dbResult && dbResult.length > 0) {
+                    const merged = mergeData(dbResult[0], logData);
+                    await updateDataLog(merged, tableName);
+                  } else {
+                    await insertDataLog(logData, tableName);
+                  }
                 } catch (e) {
                   console.error("Processing error:", e);
                   // continue processing next lines
@@ -186,7 +195,7 @@ function runCommandAndProcessLogs(options = {}) {
               stream.resume();
             })
             .stderr.on("data", (data) => {
-              console.error("STDERR:", data.toString());
+              // console.error("STDERR:", data.toString());
             });
         });
       })
